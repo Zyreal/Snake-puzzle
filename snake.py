@@ -1,20 +1,42 @@
 import pygame
-import time
 # opens application
 pygame.init()
 display_width = 500
 display_height = 400
 display = pygame.display.set_mode((display_width, display_height))
 pygame.display.set_caption('Snake game puzzle')
-white = (0,0,0)
+white = (255,255,255)
+black = (0,0,0)
+red = (255,0,0)
+curr_level = 1
+# stores position of food objects
+food = []
 
-level = 1
+continue_screen = False
+
+# different map levels
+def level(curr_level):
+    global food
+    if curr_level == 1:
+        food = [(20,20),(420,320),(20,320)]
+    elif curr_level == 2:
+        food = [(60,30),(60,100),(300,100),(300,320),(30,320),(30,60),(420,60)]
+    elif curr_level == 3:
+        food = [(100,50),(150,50),(150,220),(20,220),(20,100),(400,100),(400,150),(100,150),(100,10),(400,10),(400,320),(20,320)]
+
+def draw(color):
+    global food
+    display.fill(black)
+    for i in food:
+        x, y = i
+        # rectangles is food player must eat
+        pygame.draw.rect(display, color, [x, y, 10, 10])
+    pygame.display.update()
 
 def game():
+    global curr_level
+    global continue_screen
     hasPlaced = False
-    white = (255,255,255)
-    red = (255,0,0)
-    black = (0,0,0)
 
     x = 0
     move_x = 0
@@ -25,38 +47,65 @@ def game():
     # 0 none 1 up 2 down
     vertical = False
     game_over = False
-    
-    # different map levels
-    def level(curr_level, color):
-        if curr_level == 1:
-            #rectangles are items player must collect
-            pygame.draw.rect(display, color, [20, 20, 10, 10])
-            pygame.draw.rect(display, color, [420, 320, 10, 10])
-            pygame.draw.rect(display, color, [20, 320, 10, 10])
-        elif curr_level == 2:
-            pygame.draw.rect(display, color, [60, 30, 10, 10])
-            pygame.draw.rect(display, color, [60, 100, 10, 10])
-            pygame.draw.rect(display, color, [300, 100, 10, 10])
-            pygame.draw.rect(display, color, [300, 320, 10, 10])
-            pygame.draw.rect(display, color, [30, 320, 10, 10])
-            pygame.draw.rect(display, color, [30, 60, 10, 10])
-            pygame.draw.rect(display, color, [420, 60, 10, 10])
-        elif curr_level == 3:
-            pygame.draw.rect(display, color, [100, 50, 10, 10])
-            pygame.draw.rect(display, color, [150, 50, 10, 10])
-            pygame.draw.rect(display, color, [150, 220, 10, 10])
-            pygame.draw.rect(display, color, [20, 220, 10, 10])
-            pygame.draw.rect(display, color, [20, 100, 10, 10])
-            pygame.draw.rect(display, color, [400, 100, 10, 10])
-            pygame.draw.rect(display, color, [400, 150, 10, 10])
-            pygame.draw.rect(display, color, [100, 150, 10, 10])
-            pygame.draw.rect(display, color, [100, 10, 10, 10])
-            pygame.draw.rect(display, color, [400, 10, 10, 10])
-            pygame.draw.rect(display, color, [400, 320, 10, 10])
-            pygame.draw.rect(display, color, [20, 320, 10, 10])
-        pygame.display.update()
+
+    level(curr_level)
+
+    draw(white)
+    # checks if position of food matches player position
+    def eaten(player_x, player_y):
+        global food
+        global curr_level
+        global continue_screen
+        for i in food:
+            x, y = i
+            # between width and length of object square
+            if ((x - 10 <= player_x <= x + 10) and (y - 10 <= player_y <= y + 10)):
+                food.remove(i)
+            if food == []:
+                curr_level+=1
+                # player has finished all levels
+                if curr_level > 3:
+                    continue_screen = True
+                level(curr_level)
+                game()
 
     while not game_over:
+        # let player give up or restart level
+        while continue_screen == True:
+            display.fill(black)
+            font_style = pygame.font.SysFont(None, 30)
+            if curr_level > 3:
+                msg = font_style.render("You have Won!", True, white)
+                msg2 = font_style.render("Press p to play again or q to quit", True, white)
+            else:
+                msg = font_style.render("Game Over!", True, white)
+                # create another variable for a new line
+                msg2 = font_style.render("Press r to restart level or q to quit", True, white)
+
+            # creates a rectangle the size of the msg text and puts its center coordinates in the center of screen
+            msg_rect = msg.get_rect(center=(display_width / 2, display_height / 2))
+            msg2_rect = msg2.get_rect(center=(display_width / 2, display_height / 2 + msg_rect.height))
+            display.blit(msg, msg_rect)
+            display.blit(msg2, msg2_rect)
+            pygame.display.update()
+            for event in pygame.event.get():
+                if event.type==pygame.KEYDOWN:
+                    if curr_level > 3:
+                        if event.key==pygame.K_p:
+                            curr_level = 1
+                            continue_screen = False
+                            game()
+                    else:
+                        if event.key==pygame.K_r:
+                            continue_screen = False
+                            game()
+                    if event.key==pygame.K_q:
+                        # closes application
+                        pygame.quit()
+
+                        # stops code
+                        quit()
+            pygame.display.update()
         # checks every command/movement user does
         for event in pygame.event.get():
             # checks if player has clicked the x icon
@@ -64,8 +113,13 @@ def game():
                 pygame.quit()
                 quit()
             if hasPlaced == False:
+                mouse_x,mouse_y = pygame.mouse.get_pos()
+                display.fill(black)
+                draw(white)
+                pygame.draw.rect(display,red,[mouse_x,mouse_y,10,10])
+                pygame.display.update()
                 if event.type == pygame.MOUSEBUTTONUP:
-                    mouse_x,mouse_y = pygame.mouse.get_pos()
+                    #mouse_x,mouse_y = pygame.mouse.get_pos()
                     x = mouse_x
                     y = mouse_y
                     # draw.rect() takes display, color, [positionX, positionY, sizeX, sizeY]
@@ -94,32 +148,20 @@ def game():
                         move_y = 10
                         horizontal = False
                         vertical = True
-        # only draw if block has been placed
+        # only draw if first block has been placed
         if hasPlaced == True:
             x += move_x
             y += move_y
+            draw(white)
+            eaten(x, y)
+            # player has finished all levels
+            if curr_level > 3:
+                continue_screen = True
             pygame.draw.rect(display,red,[x,y,10,10])
             pygame.display.update()
             # changes tick rate of pygame (frames per second)
             pygame.time.Clock().tick(20)
         # game ends if out of bounds
         if x < 0 or x > display_width or y < 0 or y > display_height:
-            game_over = True
+            continue_screen = True
 game()
-font_style = pygame.font.SysFont(None, 50)
-msg = font_style.render("Game Over", True, white)
-
-# creates a rectangle the size of the msg text and puts its coordinates in the center of screen
-msg_rect = msg.get_rect(center=(display_width / 2, display_height / 2) )
-
-display.blit(msg, msg_rect)
-
-
-pygame.display.update()
-time.sleep(1)
-
-# closes application
-pygame.quit()
-
-# stops code
-quit()
