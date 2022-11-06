@@ -2,5 +2,5 @@
 ## Description
 Small puzzle game based on the game snake. Created as practice using pygame
 
-## Dependencies
+## Install
 `pip install pygame`
