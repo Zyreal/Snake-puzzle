@@ -9,7 +9,7 @@ white = (255,255,255)
 black = (0,0,0)
 red = (255,0,0)
 curr_level = 1
-# stores position of food objects
+# stores position of food items
 food = []
 
 continue_screen = False
@@ -33,6 +33,15 @@ def draw(color):
         pygame.draw.rect(display, color, [x, y, 10, 10])
     pygame.display.update()
 
+# checks if position of food matches player position
+def eaten(player_x, player_y, food = []):
+    for i in food:
+        x, y = i
+        # between width and length of food square
+        if ((x - 10 <= player_x <= x + 10) and (y - 10 <= player_y <= y + 10)):
+            food.remove(i)
+            return True
+    return False
 def game():
     global curr_level
     global continue_screen
@@ -40,34 +49,15 @@ def game():
 
     x = 0
     move_x = 0
-    # 0 none 1 left 2 right
-    horizontal = False
     y = 0
     move_y = 0
-    # 0 none 1 up 2 down
-    vertical = False
+
     game_over = False
 
+    action = False
     level(curr_level)
 
     draw(white)
-    # checks if position of food matches player position
-    def eaten(player_x, player_y):
-        global food
-        global curr_level
-        global continue_screen
-        for i in food:
-            x, y = i
-            # between width and length of object square
-            if ((x - 10 <= player_x <= x + 10) and (y - 10 <= player_y <= y + 10)):
-                food.remove(i)
-            if food == []:
-                curr_level+=1
-                # player has finished all levels
-                if curr_level > 3:
-                    continue_screen = True
-                level(curr_level)
-                game()
 
     while not game_over:
         # let player give up or restart level
@@ -114,46 +104,55 @@ def game():
                 quit()
             if hasPlaced == False:
                 mouse_x,mouse_y = pygame.mouse.get_pos()
+                # draw rectangle at the tip of the cursor
+                mouse_x-=10
+                mouse_y-=10
                 display.fill(black)
                 draw(white)
                 pygame.draw.rect(display,red,[mouse_x,mouse_y,10,10])
                 pygame.display.update()
                 if event.type == pygame.MOUSEBUTTONUP:
-                    #mouse_x,mouse_y = pygame.mouse.get_pos()
+                    # draw.rect() takes display, color, [positionX, positionY, sizeX, sizeY]
                     x = mouse_x
                     y = mouse_y
-                    # draw.rect() takes display, color, [positionX, positionY, sizeX, sizeY]
                     pygame.draw.rect(display,red,[mouse_x,mouse_y,10,10])
                     hasPlaced = True
             else:
                 # check key direction
                 if event.type==pygame.KEYDOWN:
-                    if (event.key == pygame.K_LEFT or event.key == pygame.K_a) and horizontal == False:
-                        move_x = -10
-                        move_y = 0
-                        horizontal = True
-                        vertical = False
-                    elif (event.key == pygame.K_RIGHT or event.key == pygame.K_d) and horizontal == False:
-                        move_x = 10
-                        move_y = 0
-                        horizontal = True
-                        vertical = False
-                    elif (event.key == pygame.K_UP or event.key == pygame.K_w) and vertical == False:
-                        move_x = 0
-                        move_y = -10
-                        horizontal = False
-                        vertical = True
-                    elif (event.key == pygame.K_DOWN or event.key == pygame.K_s) and vertical == False:
-                        move_x = 0
-                        move_y = 10
-                        horizontal = False
-                        vertical = True
+                    if action == False:
+                        if (event.key == pygame.K_LEFT or event.key == pygame.K_a):
+                            move_x = -10
+                            move_y = 0
+                            action = True
+                        elif (event.key == pygame.K_RIGHT or event.key == pygame.K_d):
+                            move_x = 10
+                            move_y = 0
+                            action = True
+                        elif (event.key == pygame.K_UP or event.key == pygame.K_w):
+                            move_x = 0
+                            move_y = -10
+                            action = True
+                        elif (event.key == pygame.K_DOWN or event.key == pygame.K_s):
+                            move_x = 0
+                            move_y = 10
+                            action = True
         # only draw if first block has been placed
         if hasPlaced == True:
             x += move_x
             y += move_y
+            if eaten(x, y, food):
+                if food == []:
+                    curr_level+=1
+                    # player has finished all levels
+                    if curr_level > 3:
+                        continue_screen = True
+                    level(curr_level)
+                    game()
+                move_x = 0
+                move_y = 0
+                action = False
             draw(white)
-            eaten(x, y)
             # player has finished all levels
             if curr_level > 3:
                 continue_screen = True
